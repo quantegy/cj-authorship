@@ -25,6 +25,11 @@ add_action('init', array(new \CJ_Authorship\CJ_Authorship_Handler(), 'init'));
 
 add_action('plugins_loaded', 'cj_authorship_check');
 
+// filter out default author display on frontend, if display for the post is set
+add_filter('the_author_posts_link', 'cj_authorship_the_author_posts_link');
+
+add_action('wp_enqueue_scripts', 'cj_authorship_wp_enqueue_scripts');
+
 // FUNCTIONS
 
 /**
@@ -73,4 +78,50 @@ function cj_authorship_install_options() {
             . "UNIQUE KEY id (id)) $charsetCollate;";
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
+}
+
+function cj_authorship_the_author_posts_link($deprecated = '') {
+    global $authordata;
+    global $wpdb;
+    global $post;
+    
+    $link = '';
+    
+    $optionTable = $wpdb->prefix.  \CJ_Authorship\CJ_Authorship_Handler::TABLE_OPTIONS_SUFFIX;
+    $postId = $post->ID;
+    $optionKey = \CJ_Authorship\CJ_Authorship_Handler::OPTION_DISPLAY_AUTHOR;
+    
+    $option = $wpdb->get_var(""
+            . "SELECT a.option_value "
+            . "FROM $optionTable AS a "
+            . "WHERE a.post_id = $postId "
+            . "AND a.option_key = '$optionKey' "
+            . "LIMIT 0,1");
+    $option = (bool) $option;
+    
+    $link = get_the_author_meta('nickname', $authordata->data->ID);
+    
+    if($option === true) {
+        $authorTable = $wpdb->prefix.  \CJ_Authorship\CJ_Authorship_Handler::TABLE_SUFFIX;
+        
+        $authors = $wpdb->get_results(""
+                . "SELECT a.fullname, a.description "
+                . "FROM $authorTable AS a "
+                . "WHERE a.post_id = '$postId' "
+                . "ORDER BY a.ordinal "
+                . "ASC");
+        
+        $html = '<!-- begin author output -->';
+        ob_start();
+        include 'templates/front_the_author.php';
+        $html .= ob_get_clean();
+        
+        $link = $html;
+    }
+    
+    echo apply_filters('cj_authorship_the_author_posts_link', $link);
+}
+
+function cj_authorship_wp_enqueue_scripts() {
+    wp_enqueue_style('cj-authorship-front', plugins_url() .'/'. \CJ_Authorship\CJ_Authorship_Handler::getInstance()->pluginDir . '/css/style.css');
 }

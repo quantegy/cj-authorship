@@ -8,7 +8,7 @@ class CJ_Authorship_Handler {
     const TABLE_OPTIONS_SUFFIX = 'cj_authorship_options';
     const OPTION_DISPLAY_AUTHOR = 'display_cj_author';
     
-    private $pluginDir;
+    public $pluginDir;
     
     private static $instance;
     
@@ -174,7 +174,6 @@ class CJ_Authorship_Handler {
         
         $authors = $this->getAuthors($post->ID);
         $isDisplayed = $this->isDisplayed($post->ID);
-        var_dump($isDisplayed);
         
         $html = '<!-- begin admin panel for authorship metabox -->';
         ob_start();

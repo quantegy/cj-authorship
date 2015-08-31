@@ -21,5 +21,5 @@
 </div>
 <p>
     <span>Use Authorship as post/page display name?</span> 
-    <input type="checkbox" name="useCJAuthor" id="useCJAuthor" class="" <?php echo ($isDisplayed === true) ? 'checked' : ''; ?> />
+    <input type="checkbox" name="useCJAuthor" id="useCJAuthor" class="" <?php echo ($isDisplayed === true || $isPostNew == true) ? 'checked' : ''; ?> />
 </p>

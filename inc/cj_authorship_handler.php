@@ -174,7 +174,10 @@ class CJ_Authorship_Handler {
         
         $authors = $this->getAuthors($post->ID);
         $isDisplayed = $this->isDisplayed($post->ID);
-        
+
+        // new posts will by default enable author display checkbox
+        $isPostNew = is_edit_page('new');
+
         $html = '<!-- begin admin panel for authorship metabox -->';
         ob_start();
         include 'templates/admin_authorship.php';

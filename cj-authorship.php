@@ -12,7 +12,7 @@
 
 defined('ABSPATH') or die("No script kiddies please!");
 
-set_include_path(get_include_path().PATH_SEPARATOR.dirname(__FILE__));
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__));
 
 @define('CJ_AUTHORSHIP_VERSION_OPTION', 'cj_authorship_version');
 
@@ -35,93 +35,122 @@ add_action('wp_enqueue_scripts', 'cj_authorship_wp_enqueue_scripts');
 /**
  * this will run plugin update checks
  */
-function cj_authorship_check() {
-    if(get_site_option(CJ_AUTHORSHIP_VERSION_OPTION) != \CJ_Authorship\CJ_Authorship_Handler::VERSION) {
+function cj_authorship_check()
+{
+    if (get_site_option(CJ_AUTHORSHIP_VERSION_OPTION) != \CJ_Authorship\CJ_Authorship_Handler::VERSION) {
         cj_authorship_install();
     }
 }
 
 /**
  * install plugin
- * @global object $wpdb;
+ * @global object $wpdb ;
  */
-function cj_authorship_install() {
+function cj_authorship_install()
+{
     global $wpdb;
-    
+
     $tableName = $wpdb->prefix . \CJ_Authorship\CJ_Authorship_Handler::TABLE_SUFFIX;
     $charsetCollate = $wpdb->get_charset_collate();
     $sql = "CREATE TABLE IF NOT EXISTS $tableName ("
-            . "id INT(11) NOT NULL AUTO_INCREMENT,"
-            . "post_id INT(11) NOT NULL,"
-            . "ordinal SMALLINT(2) NOT NULL DEFAULT 0,"
-            . "fullname VARCHAR(255),"
-            . "description TEXT,"
-            . "UNIQUE KEY id (id)) $charsetCollate;";
+        . "id INT(11) NOT NULL AUTO_INCREMENT,"
+        . "post_id INT(11) NOT NULL,"
+        . "ordinal SMALLINT(2) NOT NULL DEFAULT 0,"
+        . "fullname VARCHAR(255),"
+        . "description TEXT,"
+        . "UNIQUE KEY id (id)) $charsetCollate;";
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
-    
+
     add_option(CJ_AUTHORSHIP_VERSION_OPTION, CJ_Authorship\CJ_Authorship_Handler::VERSION);
-    
+
     cj_authorship_install_options();
 }
 
-function cj_authorship_install_options() {
+function cj_authorship_install_options()
+{
     global $wpdb;
-    
+
     $tableName = $wpdb->prefix . \CJ_Authorship\CJ_Authorship_Handler::TABLE_OPTIONS_SUFFIX;
     $charsetCollate = $wpdb->get_charset_collate();
     $sql = "CREATE TABLE IF NOT EXISTS $tableName ("
-            . "id INT(11) NOT NULL AUTO_INCREMENT,"
-            . "post_id INT(11) NOT NULL,"
-            . "option_key VARCHAR(255) NOT NULL,"
-            . "option_value TEXT,"
-            . "UNIQUE KEY id (id)) $charsetCollate;";
+        . "id INT(11) NOT NULL AUTO_INCREMENT,"
+        . "post_id INT(11) NOT NULL,"
+        . "option_key VARCHAR(255) NOT NULL,"
+        . "option_value TEXT,"
+        . "UNIQUE KEY id (id)) $charsetCollate;";
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 }
 
-function cj_authorship_the_author_posts_link($deprecated = '') {
+function cj_authorship_the_author_posts_link($deprecated = '')
+{
     global $authordata;
     global $wpdb;
     global $post;
-    
+
     $link = '';
-    
-    $optionTable = $wpdb->prefix.  \CJ_Authorship\CJ_Authorship_Handler::TABLE_OPTIONS_SUFFIX;
+
+    $optionTable = $wpdb->prefix . \CJ_Authorship\CJ_Authorship_Handler::TABLE_OPTIONS_SUFFIX;
     $postId = $post->ID;
     $optionKey = \CJ_Authorship\CJ_Authorship_Handler::OPTION_DISPLAY_AUTHOR;
-    
+
     $option = $wpdb->get_var(""
-            . "SELECT a.option_value "
-            . "FROM $optionTable AS a "
-            . "WHERE a.post_id = $postId "
-            . "AND a.option_key = '$optionKey' "
-            . "LIMIT 0,1");
-    $option = (bool) $option;
-    
+        . "SELECT a.option_value "
+        . "FROM $optionTable AS a "
+        . "WHERE a.post_id = $postId "
+        . "AND a.option_key = '$optionKey' "
+        . "LIMIT 0,1");
+    $option = (bool)$option;
+
     $link = get_the_author_meta('nickname', $authordata->data->ID);
-    
-    if($option === true) {
-        $authorTable = $wpdb->prefix.  \CJ_Authorship\CJ_Authorship_Handler::TABLE_SUFFIX;
-        
+
+    if ($option === true) {
+        $authorTable = $wpdb->prefix . \CJ_Authorship\CJ_Authorship_Handler::TABLE_SUFFIX;
+
         $authors = $wpdb->get_results(""
-                . "SELECT a.fullname, a.description "
-                . "FROM $authorTable AS a "
-                . "WHERE a.post_id = '$postId' "
-                . "ORDER BY a.ordinal "
-                . "ASC");
-        
+            . "SELECT a.fullname, a.description "
+            . "FROM $authorTable AS a "
+            . "WHERE a.post_id = '$postId' "
+            . "ORDER BY a.ordinal "
+            . "ASC");
+
         $html = '<!-- begin author output -->';
         ob_start();
         include 'templates/front_the_author.php';
         $html .= ob_get_clean();
-        
+
         $link = $html;
     }
-    
+
     echo apply_filters('cj_authorship_the_author_posts_link', $link);
 }
 
-function cj_authorship_wp_enqueue_scripts() {
-    wp_enqueue_style('cj-authorship-front', plugins_url() .'/'. \CJ_Authorship\CJ_Authorship_Handler::getInstance()->pluginDir . '/css/style.css');
+function cj_authorship_wp_enqueue_scripts()
+{
+    wp_enqueue_style('cj-authorship-front', plugins_url() . '/' . \CJ_Authorship\CJ_Authorship_Handler::getInstance()->pluginDir . '/css/style.css');
+}
+
+/**
+ * is_edit_page
+ * function to check if the current page is a post edit page
+ *
+ * @author Ohad Raz <admin@bainternet.info>
+ *
+ * @param  string $new_edit what page to check for accepts new - new post page ,edit - edit post page, null for either
+ * @return boolean
+ */
+function is_edit_page($new_edit = null)
+{
+    global $pagenow;
+    //make sure we are on the backend
+    if (!is_admin()) return false;
+
+
+    if ($new_edit == "edit")
+        return in_array($pagenow, array('post.php',));
+    elseif ($new_edit == "new") //check for new post page
+        return in_array($pagenow, array('post-new.php'));
+    else //check for either new or edit
+        return in_array($pagenow, array('post.php', 'post-new.php'));
 }
